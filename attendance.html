@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attendance Tracker</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "DM Sans", sans-serif;
+        background: #f4f2ee;
+      }
+      @keyframes rowIn {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-row {
+        animation: rowIn 0.28s ease both;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <!-- ─── Loading Spinner ─── -->
+    <div
+      id="loader"
+      class="z-50 fixed inset-0 flex justify-center items-center bg-[#f4f2ee]"
+    >
+      <div
+        class="border-4 border-gray-200 border-t-green-700 rounded-full w-10 h-10 animate-spin"
+      ></div>
+    </div>
+
+    <!-- ─── Main App ─── -->
+    <div id="app" class="hidden mx-auto px-5 py-10 max-w-4xl">
+      <!-- Header -->
+      <header class="mb-8 flex justify-between items-start">
+        <div>
+          <h1
+            class="font-bold leading-tight tracking-tight"
+            style="
+              font-family: &quot;Playfair Display&quot;, serif;
+              font-size: clamp(1.75rem, 5vw, 2.4rem);
+            "
+          >
+            Attendance Tracker
+          </h1>
+          <p class="mt-1 text-[#7a7a7a] text-sm">
+            Shared attendance — everyone sees the same data in real time.
+          </p>
+        </div>
+        <div id="auth-section" class="flex flex-col items-end">
+          <button
+            id="signin-btn"
+            class="px-4 py-2 bg-white border border-[#e4e1dc] text-[#1a1a1a] rounded-full text-xs font-semibold hover:bg-gray-50 transition-all shadow-sm flex items-center gap-2"
+          >
+            <span class="w-2 h-2 rounded-full bg-gray-300"></span>
+            Sign In
+          </button>
+          <div
+            id="user-badge"
+            class="hidden items-center gap-2 bg-[#e8f2ec] px-3 py-1.5 rounded-full border border-[#2d5a3f]/20"
+          >
+            <span
+              class="w-2 h-2 rounded-full bg-[#2d5a3f] animate-pulse"
+            ></span>
+            <span
+              id="user-name"
+              class="text-[.72rem] font-bold text-[#2d5a3f] uppercase tracking-wider"
+              >Editor: Youssef</span
+            >
+            <button
+              id="signout-btn"
+              class="ml-1 text-[#2d5a3f] opacity-50 hover:opacity-100 transition-opacity"
+              title="Sign Out"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Summary Cards -->
+      <div class="gap-3 grid grid-cols-3 mb-6">
+        <div class="bg-white shadow-sm p-4 border border-[#e4e1dc] rounded-lg">
+          <div
+            class="mb-1 font-medium text-[.72rem] text-[#7a7a7a] uppercase tracking-widest"
+          >
+            Total
+          </div>
+          <div
+            id="stat-total"
+            class="font-semibold text-[#1a1a1a] text-[1.55rem]"
+          >
+            0
+          </div>
+        </div>
+        <div class="bg-white shadow-sm p-4 border border-[#e4e1dc] rounded-lg">
+          <div
+            class="mb-1 font-medium text-[.72rem] text-[#7a7a7a] uppercase tracking-widest"
+          >
+            Present
+          </div>
+          <div
+            id="stat-present"
+            class="font-semibold text-[#2d5a3f] text-[1.55rem]"
+          >
+            0
+          </div>
+        </div>
+        <div class="bg-white shadow-sm p-4 border border-[#e4e1dc] rounded-lg">
+          <div
+            class="mb-1 font-medium text-[.72rem] text-[#7a7a7a] uppercase tracking-widest"
+          >
+            Absent
+          </div>
+          <div
+            id="stat-absent"
+            class="font-semibold text-[#c0392b] text-[1.55rem]"
+          >
+            0
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Picker -->
+      <div
+        class="bg-white shadow-sm mb-6 p-5 border border-[#e4e1dc] rounded-lg"
+      >
+        <label
+          class="block mb-2 font-medium text-[.76rem] text-[#7a7a7a] uppercase tracking-widest"
+          >Select date</label
+        >
+        <input
+          type="date"
+          id="date-input"
+          class="bg-[#f4f2ee] px-3 py-2 border-[#e4e1dc] border-[1.5px] rounded-md outline-none w-full text-[#1a1a1a] text-sm transition-all"
+          style="color-scheme: light"
+        />
+      </div>
+
+      <!-- Tab Switcher -->
+      <div
+        class="flex gap-1 bg-white shadow-sm mb-5 p-1 border border-[#e4e1dc] rounded-lg"
+      >
+        <button
+          id="tab-daily"
+          class="flex-1 bg-[#2d5a3f] shadow-[0_2px_6px_rgba(45,90,63,.25)] px-3 py-[9px] rounded-md font-medium text-[.82rem] text-white text-center transition-all"
+        >
+          📋 Daily View
+        </button>
+        <button
+          id="tab-excel"
+          class="flex-1 bg-transparent px-3 py-[9px] rounded-md font-medium text-[.82rem] text-[#7a7a7a] text-center transition-all"
+        >
+          📊 Full Log
+        </button>
+      </div>
+
+      <!-- Views -->
+      <div id="view-daily">
+        <div class="flex justify-between items-center mb-[10px]">
+          <h2
+            id="daily-date-title"
+            class="font-semibold text-[1.2rem]"
+            style="font-family: &quot;Playfair Display&quot;, serif"
+          ></h2>
+          <button
+            id="delete-date-btn"
+            class="hidden text-xs text-red-600 font-medium hover:underline px-2 py-1 rounded hover:bg-red-50 transition-all flex items-center gap-1"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 6h18"></path>
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+            Delete this day
+          </button>
+        </div>
+        <div
+          class="bg-white shadow-sm border border-[#e4e1dc] rounded-lg overflow-hidden"
+        >
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-[#f4f2ee] border-[#e4e1dc] border-b">
+                <th
+                  class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-left uppercase tracking-widest"
+                >
+                  Name
+                </th>
+                <th
+                  class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-left uppercase tracking-widest"
+                >
+                  Status
+                </th>
+                <th
+                  class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-right uppercase tracking-widest"
+                >
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody id="daily-rows">
+              <!-- Rows injected via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-excel" class="hidden">
+        <h2
+          class="mb-[10px] font-semibold text-[1.2rem]"
+          style="font-family: &quot;Playfair Display&quot;, serif"
+        >
+          Full Attendance Log
+        </h2>
+        <div id="excel-content">
+          <!-- Table or empty state injected via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="bottom-7 left-1/2 z-[100] fixed bg-[#1a1a1a] opacity-0 shadow-[0_4px_16px_rgba(0,0,0,.2)] px-[22px] py-[11px] rounded-md font-medium text-[.84rem] text-white whitespace-nowrap transition-all -translate-x-1/2 translate-y-[90px] duration-300 pointer-events-none"
+    >
+      <!-- Message injected via JS -->
+    </div>
+
+    <script>
+      /* ─── Constants ─── */
+      const NAMES = ["Youssef", "Emad", "Benyamine", "Fady"];
+      const STORAGE_KEY = "attendance-data";
+
+      /* ─── State ─── */
+      let data = {};
+      let currentDate = todayISO();
+      let currentTab = "daily";
+      let isReady = false;
+      let isEditor = false;
+      let toastTimeout = null;
+
+      /* ─── DOM Elements ─── */
+      const loader = document.getElementById("loader");
+      const app = document.getElementById("app");
+      const dateInput = document.getElementById("date-input");
+      const tabDaily = document.getElementById("tab-daily");
+      const tabExcel = document.getElementById("tab-excel");
+      const viewDaily = document.getElementById("view-daily");
+      const viewExcel = document.getElementById("view-excel");
+      const dailyRows = document.getElementById("daily-rows");
+      const dailyDateTitle = document.getElementById("daily-date-title");
+      const excelContent = document.getElementById("excel-content");
+      const statTotal = document.getElementById("stat-total");
+      const statPresent = document.getElementById("stat-present");
+      const statAbsent = document.getElementById("stat-absent");
+      const toastElem = document.getElementById("toast");
+      const deleteDateBtn = document.getElementById("delete-date-btn");
+
+      const signinBtn = document.getElementById("signin-btn");
+      const signoutBtn = document.getElementById("signout-btn");
+      const userBadge = document.getElementById("user-badge");
+      const userNameDisplay = document.getElementById("user-name");
+
+      /* ─── Helpers ─── */
+      function todayISO() {
+        return new Date().toISOString().slice(0, 10);
+      }
+
+      function formatDate(iso) {
+        if (!iso) return "";
+        const [y, m, d] = iso.split("-").map(Number);
+        return (
+          [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ][m - 1] +
+          " " +
+          d +
+          ", " +
+          y
+        );
+      }
+
+      function seedDate(dataObj, date) {
+        if (!dataObj[date]) {
+          return {
+            ...dataObj,
+            [date]: NAMES.map((n) => ({ name: n, present: false })),
+          };
+        }
+        return dataObj;
+      }
+
+      async function readShared() {
+        try {
+          if (window.storage) {
+            const result = await window.storage.get(STORAGE_KEY, true);
+            return result ? JSON.parse(result.value) : {};
+          }
+          // Fallback to localStorage if window.storage is missing
+          const local = localStorage.getItem(STORAGE_KEY);
+          return local ? JSON.parse(local) : {};
+        } catch (e) {
+          console.warn("Read failed:", e);
+          return {};
+        }
+      }
+
+      async function writeShared(newData) {
+        try {
+          if (window.storage) {
+            await window.storage.set(
+              STORAGE_KEY,
+              JSON.stringify(newData),
+              true,
+            );
+          } else {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+          }
+        } catch (e) {
+          console.warn("Write failed:", e);
+        }
+      }
+
+      function showToast(msg) {
+        toastElem.textContent = msg;
+        toastElem.style.transform = "translateX(-50%) translateY(0)";
+        toastElem.style.opacity = "1";
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+          toastElem.style.transform = "translateX(-50%) translateY(90px)";
+          toastElem.style.opacity = "0";
+        }, 2400);
+      }
+
+      async function handleDeleteDate() {
+        if (!isEditor) return;
+        if (
+          !confirm(
+            `Are you sure you want to delete all data for ${formatDate(currentDate)}?`,
+          )
+        )
+          return;
+
+        delete data[currentDate];
+        await writeShared(data);
+        showToast(`Data for ${formatDate(currentDate)} deleted`);
+        render();
+      }
+
+      async function reseedCurrentDate() {
+        data = seedDate(data, currentDate);
+        await writeShared(data);
+        showToast(`Initialized data for ${formatDate(currentDate)}`);
+        render();
+      }
+
+      function handleSignIn() {
+        const nameInput = prompt("Enter your Name:");
+        if (!nameInput) return;
+
+        const cleanName = nameInput.trim();
+
+        if (cleanName.toLowerCase() === "youssef") {
+          const pass = prompt("Enter Password for Youssef:");
+          if (pass === "admin") {
+            isEditor = true;
+            localStorage.setItem("isEditor", "true");
+            localStorage.setItem("currentUser", "Youssef");
+            showToast("Authenticated as Youssef");
+          } else {
+            showToast("Incorrect Password");
+          }
+        } else {
+          showToast(`Signed in as ${cleanName} (View-only)`);
+          localStorage.setItem("currentUser", cleanName);
+          localStorage.setItem("isEditor", "false");
+          isEditor = false;
+        }
+        updateAuthUI();
+        render();
+      }
+
+      function handleSignOut() {
+        localStorage.removeItem("isEditor");
+        localStorage.removeItem("currentUser");
+        isEditor = false;
+        showToast("Signed Out");
+        updateAuthUI();
+        render();
+      }
+
+      function updateAuthUI() {
+        const user = localStorage.getItem("currentUser");
+        const editorFlag = localStorage.getItem("isEditor") === "true";
+
+        if (user) {
+          signinBtn.classList.add("hidden");
+          userBadge.classList.remove("hidden");
+          userNameDisplay.textContent = editorFlag
+            ? `Editor: ${user}`
+            : `User: ${user}`;
+
+          if (editorFlag) {
+            userBadge.className =
+              "flex items-center gap-2 bg-[#e8f2ec] px-3 py-1.5 rounded-full border border-[#2d5a3f]/20";
+            userBadge.querySelector(".animate-pulse").className =
+              "w-2 h-2 rounded-full bg-[#2d5a3f] animate-pulse";
+            userNameDisplay.className =
+              "text-[.72rem] font-bold text-[#2d5a3f] uppercase tracking-wider";
+          } else {
+            userBadge.className =
+              "flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200";
+            userBadge.querySelector(".animate-pulse").className =
+              "w-2 h-2 rounded-full bg-gray-400";
+            userNameDisplay.className =
+              "text-[.72rem] font-bold text-gray-500 uppercase tracking-wider";
+          }
+        } else {
+          signinBtn.classList.remove("hidden");
+          userBadge.classList.add("hidden");
+        }
+      }
+
+      /* ─── Rendering ─── */
+      function render() {
+        if (!isReady) return;
+
+        // Stats
+        const records = data[currentDate] || [];
+        const presentCount = records.filter((r) => r.present).length;
+        statTotal.textContent = records.length;
+        statPresent.textContent = presentCount;
+        statAbsent.textContent = records.length - presentCount;
+
+        // Tabs UI
+        tabDaily.className = `flex-1 text-center rounded-md transition-all font-medium py-[9px] px-3 text-[.82rem] ${currentTab === "daily" ? "bg-[#2d5a3f] text-white shadow-[0_2px_6px_rgba(45,90,63,.25)]" : "bg-transparent text-[#7a7a7a]"}`;
+        tabExcel.className = `flex-1 text-center rounded-md transition-all font-medium py-[9px] px-3 text-[.82rem] ${currentTab === "excel" ? "bg-[#2d5a3f] text-white shadow-[0_2px_6px_rgba(45,90,63,.25)]" : "bg-transparent text-[#7a7a7a]"}`;
+
+        viewDaily.classList.toggle("hidden", currentTab !== "daily");
+        viewExcel.classList.toggle("hidden", currentTab !== "excel");
+        deleteDateBtn.classList.toggle(
+          "hidden",
+          !isEditor || currentTab !== "daily",
+        );
+
+        if (currentTab === "daily") {
+          renderDaily();
+        } else {
+          renderExcel();
+        }
+      }
+
+      function renderDaily() {
+        dailyDateTitle.textContent = formatDate(currentDate);
+        const records = data[currentDate];
+
+        if (!records || records.length === 0) {
+          dailyRows.innerHTML = `
+            <tr>
+              <td colspan="3" class="p-12 text-center">
+                <div class="text-[#7a7a7a] mb-4">No attendance data found for this date.</div>
+                ${
+                  isEditor
+                    ? `<button onclick="reseedCurrentDate()" class="bg-[#2d5a3f] text-white px-6 py-2 rounded-full font-semibold text-sm hover:bg-[#244b34] transition-all shadow-sm">Initialize Day</button>`
+                    : ""
+                }
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        // Update header - only show Action if isEditor
+        const tableHead = document.querySelector("#view-daily thead");
+        tableHead.innerHTML = `
+          <tr class="bg-[#f4f2ee] border-[#e4e1dc] border-b">
+            <th class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-left uppercase tracking-widest">Name</th>
+            <th class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-left uppercase tracking-widest">Status</th>
+            ${isEditor ? `<th class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-right uppercase tracking-widest">Action</th>` : ""}
+          </tr>
+        `;
+
+        dailyRows.innerHTML = records
+          .map(
+            (rec, idx) => `
+        <tr class="border-[#e4e1dc] border-b animate-row" style="animation-delay: ${idx * 0.04}s">
+          <td class="p-[13px_16px] font-medium text-[.88rem]">${rec.name}</td>
+          <td class="p-[13px_16px]">
+            <span class="inline-flex items-center gap-1.5 rounded-full font-medium text-[.76rem] px-[10px] py-[4px] ${rec.present ? "bg-[#e8f2ec] text-[#2d5a3f]" : "bg-[#fdf0ef] text-[#c0392b]"}">
+              <span class="rounded-full w-[7px] h-[7px] ${rec.present ? "bg-[#2d5a3f]" : "bg-[#c0392b]"}"></span>
+              ${rec.present ? "Present" : "Absent"}
+            </span>
+          </td>
+          ${
+            isEditor
+              ? `
+            <td class="p-[13px_16px] text-right">
+              <button onclick="handleToggle(${idx})" class="rounded-full font-medium transition-colors cursor-pointer text-[.76rem] px-[13px] py-[5px] border ${rec.present ? "border-[#c0392b] bg-[#fdf0ef] text-[#c0392b]" : "border-[#2d5a3f] bg-[#e8f2ec] text-[#2d5a3f]"}">
+                ${rec.present ? "Mark Absent" : "Mark Present"}
+              </button>
+            </td>
+          `
+              : ""
+          }
+        </tr>
+      `,
+          )
+          .join("");
+      }
+
+      function renderExcel() {
+        const allDates = Object.keys(data).sort();
+        if (allDates.length === 0) {
+          excelContent.innerHTML = `
+          <div class="bg-white shadow-sm px-5 py-12 border border-[#e4e1dc] rounded-lg text-[#7a7a7a] text-center">
+            <div class="opacity-50 mb-2 text-[1.9rem]">📊</div>
+            <p class="text-[.86rem]">No data yet — pick a date in Daily View.</p>
+          </div>
+        `;
+          return;
+        }
+
+        excelContent.innerHTML = `
+        <div class="bg-white shadow-sm border border-[#e4e1dc] rounded-lg overflow-hidden">
+          <div class="overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
+            <table class="w-full min-w-[560px] text-[.84rem] border-collapse">
+              <thead>
+                <tr>
+                  <th class="left-0 z-[10] sticky bg-[#eae7e1] p-[10px_14px] border-[#e4e1dc] border-r-[2px] border-b-[2px] min-w-[140px] font-bold text-[.70rem] text-[#7a7a7a] text-left uppercase tracking-[.08em] whitespace-nowrap">Name</th>
+                  ${allDates
+                    .map(
+                      (d) => `
+                    <th class="bg-[#eae7e1] p-[10px_14px] border-[#e4e1dc] border-r border-b-[2px] font-bold text-[.70rem] text-[#7a7a7a] text-center uppercase tracking-[.08em] whitespace-nowrap">${formatDate(d)}</th>
+                  `,
+                    )
+                    .join("")}
+                  <th class="bg-[#eae7e1] p-[10px_14px] border-[#e4e1dc] border-b-[2px] border-l-[2px] font-bold text-[.70rem] text-[#2d5a3f] text-center uppercase tracking-[.08em] whitespace-nowrap">Total</th>
+                  <th class="bg-[#eae7e1] p-[10px_14px] border-[#e4e1dc] border-b-[2px] font-bold text-[.70rem] text-[#2d5a3f] text-center uppercase tracking-[.08em] whitespace-nowrap">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${NAMES.map((name) => {
+                  let presentCount = 0;
+                  const rowData = allDates.map((d) => {
+                    const rec = (data[d] || []).find((r) => r.name === name);
+                    if (rec && rec.present) presentCount++;
+                    return rec;
+                  });
+                  const percentage =
+                    allDates.length > 0
+                      ? ((presentCount / allDates.length) * 100).toFixed(0)
+                      : 0;
+
+                  return `
+                    <tr class="border-[#e4e1dc] border-b">
+                      <td class="left-0 z-[1] sticky bg-white p-[9px_14px] border-[#e4e1dc] border-r-[2px] min-w-[140px] font-medium text-[#1a1a1a]">${name}</td>
+                      ${rowData
+                        .map(
+                          (rec) => `
+                        <td class="p-[9px_14px] border-[#e4e1dc] border-r text-center">
+                          ${
+                            rec
+                              ? `
+                            <span class="inline-flex items-center justify-center rounded font-bold w-[52px] h-[26px] text-[.73rem] ${rec.present ? "bg-[#e8f2ec] text-[#2d5a3f]" : "bg-[#fdf0ef] text-[#c0392b]"}">
+                              ${rec.present ? "✓" : "✗"}
+                            </span>
+                          `
+                              : `<span class="text-[.9rem] text-[#e4e1dc]">—</span>`
+                          }
+                        </td>
+                      `,
+                        )
+                        .join("")}
+                      <td class="bg-gray-50 p-[9px_14px] border-[#e4e1dc] border-l-[2px] font-bold text-[#2d5a3f] text-center">${presentCount}</td>
+                      <td class="bg-gray-50 p-[9px_14px] font-bold text-[#2d5a3f] text-center">${percentage}%</td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      }
+
+      /* ─── Handlers ─── */
+      async function handleToggle(idx) {
+        if (!isEditor) return;
+        const records = [...data[currentDate]];
+        const target = records[idx];
+        target.present = !target.present;
+        data[currentDate] = records;
+
+        await writeShared(data);
+        showToast(`${target.name} → ${target.present ? "Present" : "Absent"}`);
+        render();
+      }
+
+      /* ─── Initialization ─── */
+      async function init() {
+        // Restore Auth State
+        const savedUser = localStorage.getItem("currentUser");
+        const editorFlag = localStorage.getItem("isEditor") === "true";
+        if (savedUser) {
+          isEditor = editorFlag;
+          updateAuthUI();
+        }
+
+        // Handle Secret Key (#admin) for legacy support
+        if (window.location.hash === "#admin") {
+          isEditor = true;
+          localStorage.setItem("isEditor", "true");
+          localStorage.setItem("currentUser", "Youssef");
+          showToast("Admin Mode Activated");
+          window.history.replaceState(
+            null,
+            null,
+            window.location.pathname + window.location.search,
+          );
+          updateAuthUI();
+        }
+
+        // Set initial picker value
+        dateInput.value = currentDate;
+
+        // Initial read
+        let d = await readShared();
+        d = seedDate(d, currentDate);
+        await writeShared(d);
+
+        data = d;
+        isReady = true;
+        loader.classList.add("hidden");
+        app.classList.remove("hidden");
+        render();
+
+        // Polling
+        setInterval(async () => {
+          const fresh = await readShared();
+          data = fresh;
+          render();
+        }, 15000);
+      }
+
+      /* ─── Event Listeners ─── */
+      dateInput.addEventListener("change", async (e) => {
+        currentDate = e.target.value;
+        const next = seedDate(data, currentDate);
+        if (next !== data) {
+          data = next;
+          await writeShared(data);
+        }
+        render();
+      });
+
+      tabDaily.addEventListener("click", () => {
+        currentTab = "daily";
+        render();
+      });
+      tabExcel.addEventListener("click", () => {
+        currentTab = "excel";
+        render();
+      });
+
+      signinBtn.addEventListener("click", handleSignIn);
+      signoutBtn.addEventListener("click", handleSignOut);
+      deleteDateBtn.addEventListener("click", handleDeleteDate);
+
+      // Focus effects for date input (mimicking JSX's JS-based styling)
+      dateInput.addEventListener(
+        "focus",
+        () => (dateInput.style.borderColor = "#2d5a3f"),
+      );
+      dateInput.addEventListener(
+        "blur",
+        () => (dateInput.style.borderColor = "#e4e1dc"),
+      );
+
+      init();
+    </script>
+  </body>
+</html>
