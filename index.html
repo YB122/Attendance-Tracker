@@ -29,6 +29,10 @@
       .animate-row {
         animation: rowIn 0.28s ease both;
       }
+      /* Fallback for Tailwind's hidden class */
+      .hidden {
+        display: none !important;
+      }
     </style>
   </head>
   <body class="min-h-screen">
@@ -342,15 +346,16 @@
 
       async function readShared() {
         try {
-          if (window.storage) {
+          if (window.storage && typeof window.storage.get === "function") {
             const result = await window.storage.get(STORAGE_KEY, true);
             return result ? JSON.parse(result.value) : {};
           }
-          // Fallback to localStorage if window.storage is missing
           const local = localStorage.getItem(STORAGE_KEY);
-          return local ? JSON.parse(local) : {};
+          if (!local) return {};
+          const parsed = JSON.parse(local);
+          return parsed && typeof parsed === "object" ? parsed : {};
         } catch (e) {
-          console.warn("Read failed:", e);
+          console.error("Read failed:", e);
           return {};
         }
       }
@@ -502,12 +507,23 @@
 
       function renderDaily() {
         dailyDateTitle.textContent = formatDate(currentDate);
+
+        // Update header - only show Action if isEditor
+        const tableHead = document.querySelector("#view-daily thead");
+        tableHead.innerHTML = `
+          <tr class="bg-[#f4f2ee] border-[#e4e1dc] border-b">
+            <th class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-left uppercase tracking-widest">Name</th>
+            <th class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-left uppercase tracking-widest">Status</th>
+            ${isEditor ? `<th class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-right uppercase tracking-widest">Action</th>` : ""}
+          </tr>
+        `;
+
         const records = data[currentDate];
 
         if (!records || records.length === 0) {
           dailyRows.innerHTML = `
             <tr>
-              <td colspan="3" class="p-12 text-center">
+              <td colspan="${isEditor ? 3 : 2}" class="p-12 text-center">
                 <div class="text-[#7a7a7a] mb-4">No attendance data found for this date.</div>
                 ${
                   isEditor
@@ -519,16 +535,6 @@
           `;
           return;
         }
-
-        // Update header - only show Action if isEditor
-        const tableHead = document.querySelector("#view-daily thead");
-        tableHead.innerHTML = `
-          <tr class="bg-[#f4f2ee] border-[#e4e1dc] border-b">
-            <th class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-left uppercase tracking-widest">Name</th>
-            <th class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-left uppercase tracking-widest">Status</th>
-            ${isEditor ? `<th class="p-[13px_16px] font-medium text-[.72rem] text-[#7a7a7a] text-right uppercase tracking-widest">Action</th>` : ""}
-          </tr>
-        `;
 
         dailyRows.innerHTML = records
           .map(
