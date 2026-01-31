@@ -49,7 +49,7 @@
     <!-- ─── Main App ─── -->
     <div id="app" class="hidden mx-auto px-5 py-10 max-w-4xl">
       <!-- Header -->
-      <header class="mb-8 flex justify-between items-start">
+      <header class="flex justify-between items-start mb-8">
         <div>
           <h1
             class="font-bold leading-tight tracking-tight"
@@ -67,26 +67,26 @@
         <div id="auth-section" class="flex flex-col items-end">
           <button
             id="signin-btn"
-            class="px-4 py-2 bg-white border border-[#e4e1dc] text-[#1a1a1a] rounded-full text-xs font-semibold hover:bg-gray-50 transition-all shadow-sm flex items-center gap-2"
+            class="flex items-center gap-2 bg-white hover:bg-gray-50 shadow-sm px-4 py-2 border border-[#e4e1dc] rounded-full font-semibold text-[#1a1a1a] text-xs transition-all"
           >
-            <span class="w-2 h-2 rounded-full bg-gray-300"></span>
+            <span class="bg-gray-300 rounded-full w-2 h-2"></span>
             Sign In
           </button>
           <div
             id="user-badge"
-            class="hidden items-center gap-2 bg-[#e8f2ec] px-3 py-1.5 rounded-full border border-[#2d5a3f]/20"
+            class="hidden items-center gap-2 bg-[#e8f2ec] px-3 py-1.5 border border-[#2d5a3f]/20 rounded-full"
           >
             <span
-              class="w-2 h-2 rounded-full bg-[#2d5a3f] animate-pulse"
+              class="bg-[#2d5a3f] rounded-full w-2 h-2 animate-pulse"
             ></span>
             <span
               id="user-name"
-              class="text-[.72rem] font-bold text-[#2d5a3f] uppercase tracking-wider"
+              class="font-bold text-[.72rem] text-[#2d5a3f] uppercase tracking-wider"
               >Editor: Youssef</span
             >
             <button
               id="signout-btn"
-              class="ml-1 text-[#2d5a3f] opacity-50 hover:opacity-100 transition-opacity"
+              class="opacity-50 hover:opacity-100 ml-1 text-[#2d5a3f] transition-opacity"
               title="Sign Out"
             >
               <svg
@@ -196,7 +196,7 @@
           ></h2>
           <button
             id="delete-date-btn"
-            class="hidden text-xs text-red-600 font-medium hover:underline px-2 py-1 rounded hover:bg-red-50 transition-all flex items-center gap-1"
+            class="hidden flex items-center gap-1 hover:bg-red-50 px-2 py-1 rounded font-medium text-red-600 text-xs hover:underline transition-all"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -524,10 +524,10 @@
           dailyRows.innerHTML = `
             <tr>
               <td colspan="${isEditor ? 3 : 2}" class="p-12 text-center">
-                <div class="text-[#7a7a7a] mb-4">No attendance data found for this date.</div>
+                <div class="mb-4 text-[#7a7a7a]">No attendance data found for this date.</div>
                 ${
                   isEditor
-                    ? `<button onclick="reseedCurrentDate()" class="bg-[#2d5a3f] text-white px-6 py-2 rounded-full font-semibold text-sm hover:bg-[#244b34] transition-all shadow-sm">Initialize Day</button>`
+                    ? `<button onclick="reseedCurrentDate()" class="bg-[#2d5a3f] hover:bg-[#244b34] shadow-sm px-6 py-2 rounded-full font-semibold text-white text-sm transition-all">Initialize Day</button>`
                     : ""
                 }
               </td>
